@@ -1,0 +1,22 @@
+channel,importance,Electrode,Brain_Region,Region_Short
+1,8.877374909491449e-07,Fp2,"Frontal Polar - Prefrontal Cortex, Right",Prefrontal-R
+0,8.769325405810456e-07,Fp1,"Frontal Polar - Prefrontal Cortex, Left",Prefrontal-L
+3,7.924038569072179e-07,F3,"Frontal - Dorsolateral Prefrontal Cortex, Left",Frontal-DLPFC-L
+5,7.017971614807799e-07,F4,"Frontal - Dorsolateral Prefrontal Cortex, Right",Frontal-DLPFC-R
+2,6.932542900819229e-07,F7,"Frontal - Inferior Frontal Gyrus, Left",Frontal-IFG-L
+4,6.86096398041573e-07,Fz,"Frontal - Medial Frontal Cortex, Midline",Frontal-Mid
+7,6.688545862630741e-07,T3,"Temporal - Mid-Temporal, Left, Auditory Cortex",Temporal-L
+6,6.593869829006306e-07,F8,"Frontal - Inferior Frontal Gyrus, Right",Frontal-IFG-R
+9,6.396943369077893e-07,Cz,"Central - Vertex, Supplementary Motor Area, Midline",Motor-SMA-Mid
+8,6.294196403602812e-07,C3,"Central - Primary Motor/Sensory Cortex, Left",Motor-Sensory-L
+11,5.882321698216779e-07,T4,"Temporal - Mid-Temporal, Right, Auditory Cortex",Temporal-R
+10,5.460055826473338e-07,C4,"Central - Primary Motor/Sensory Cortex, Right",Motor-Sensory-R
+13,5.412436142916959e-07,P3,"Parietal - Superior Parietal Lobule, Left",Parietal-L
+12,5.316439050670625e-07,T5,"Temporal/Parietal - Posterior Temporal, Left",Post-Temporal-L
+15,5.268671201301188e-07,P4,"Parietal - Superior Parietal Lobule, Right",Parietal-R
+14,4.886356129064059e-07,Pz,"Parietal - Precuneus, Midline",Parietal-Mid
+16,4.848220827527735e-07,T6,"Temporal/Parietal - Posterior Temporal, Right",Post-Temporal-R
+17,4.711216738023439e-07,O1,"Occipital - Primary Visual Cortex, Left",Occipital-L
+18,4.084048690349501e-07,Oz,"Occipital - Medial Visual Cortex, Midline",Occipital-Mid
+19,3.771557629795521e-07,O2,"Occipital - Primary Visual Cortex, Right",Occipital-R
+20,2.8933749656925706e-07,Fpz,"Frontal Polar - Prefrontal Cortex, Midline",Prefrontal-Mid

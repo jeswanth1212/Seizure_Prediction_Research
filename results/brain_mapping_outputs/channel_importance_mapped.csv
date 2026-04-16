@@ -1,0 +1,22 @@
+Channel,Importance,Channel_Index,Electrode,Brain_Region,Region_Short
+Channel 7,1.0255836e-06,7,T3,"Temporal - Mid-Temporal, Left, Auditory Cortex",Temporal-L
+Channel 6,1.0019423e-06,6,F8,"Frontal - Inferior Frontal Gyrus, Right",Frontal-IFG-R
+Channel 15,8.666904e-07,15,P4,"Parietal - Superior Parietal Lobule, Right",Parietal-R
+Channel 14,8.397781e-07,14,Pz,"Parietal - Precuneus, Midline",Parietal-Mid
+Channel 11,7.7549873e-07,11,T4,"Temporal - Mid-Temporal, Right, Auditory Cortex",Temporal-R
+Channel 3,7.6153503e-07,3,F3,"Frontal - Dorsolateral Prefrontal Cortex, Left",Frontal-DLPFC-L
+Channel 16,7.5900795e-07,16,T6,"Temporal/Parietal - Posterior Temporal, Right",Post-Temporal-R
+Channel 9,7.4197027e-07,9,Cz,"Central - Vertex, Supplementary Motor Area, Midline",Motor-SMA-Mid
+Channel 8,7.207313e-07,8,C3,"Central - Primary Motor/Sensory Cortex, Left",Motor-Sensory-L
+Channel 18,6.9329064e-07,18,Oz,"Occipital - Medial Visual Cortex, Midline",Occipital-Mid
+Channel 12,6.6492385e-07,12,T5,"Temporal/Parietal - Posterior Temporal, Left",Post-Temporal-L
+Channel 5,6.606809e-07,5,F4,"Frontal - Dorsolateral Prefrontal Cortex, Right",Frontal-DLPFC-R
+Channel 4,6.204817e-07,4,Fz,"Frontal - Medial Frontal Cortex, Midline",Frontal-Mid
+Channel 17,6.1820924e-07,17,O1,"Occipital - Primary Visual Cortex, Left",Occipital-L
+Channel 10,5.917682e-07,10,C4,"Central - Primary Motor/Sensory Cortex, Right",Motor-Sensory-R
+Channel 2,5.910225e-07,2,F7,"Frontal - Inferior Frontal Gyrus, Left",Frontal-IFG-L
+Channel 13,5.6519656e-07,13,P3,"Parietal - Superior Parietal Lobule, Left",Parietal-L
+Channel 1,5.285131e-07,1,Fp2,"Frontal Polar - Prefrontal Cortex, Right",Prefrontal-R
+Channel 0,4.427422e-07,0,Fp1,"Frontal Polar - Prefrontal Cortex, Left",Prefrontal-L
+Channel 19,4.2245628e-07,19,O2,"Occipital - Primary Visual Cortex, Right",Occipital-R
+Channel 20,3.1791805e-07,20,Fpz,"Frontal Polar - Prefrontal Cortex, Midline",Prefrontal-Mid
