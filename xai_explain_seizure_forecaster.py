@@ -342,9 +342,9 @@ def compute_integrated_gradients(xai_model, inputs, baseline=None, target=1, n_s
     return attributions
 
 # Implement SHAP
-def compute_shap_values(xai_model, sample, bg_samples, num_features=20):
+def compute_perturbation_importance(xai_model, sample, bg_samples, num_features=20):
     """Compute simplified SHAP-like feature importance"""
-    print("Computing feature importance (SHAP-style)...")
+    print("Computing feature importance (Perturbation-style)...")
     
     # Store sample dimensions for reshaping
     sample_shape = sample.shape
@@ -405,18 +405,18 @@ def compute_shap_values(xai_model, sample, bg_samples, num_features=20):
             feature_names.append(f"Ch{ch}_t{t}")
     
     # Convert to DataFrame for easier manipulation
-    shap_df = pd.DataFrame({
+    perturbation_df = pd.DataFrame({
         'feature': feature_names,
         'value': flat_sample,
-        'shap_value': flat_importance
+        'perturbation_value': flat_importance
     })
     
     # Get top features by absolute SHAP value
-    top_features = shap_df.reindex(shap_df['shap_value'].abs().sort_values(ascending=False).index)
+    top_features = perturbation_df.reindex(perturbation_df['perturbation_value'].abs().sort_values(ascending=False).index)
     top_features = top_features.head(num_features)
     
     return {
-        'shap_values': feature_importance.reshape(1, -1),
+        'perturbation_values': feature_importance.reshape(1, -1),
         'top_features': top_features,
         'feature_names': feature_names
     }
@@ -650,20 +650,20 @@ def visualize_temporal_importance(attributions, filename='results/xai_outputs/te
     return temporal_importance
 
 # Visualize SHAP values
-def visualize_shap_values(shap_data, filename_prefix='results/xai_outputs/shap'):
+def visualize_perturbation_importance(perturbation_data, filename_prefix='results/xai_outputs/shap'):
     """Visualize SHAP values"""
     print(f"Visualizing SHAP values...")
     
     # Extract SHAP values and top features
-    shap_values = shap_data['shap_values']
-    top_features = shap_data['top_features']
+    perturbation_values = perturbation_data['perturbation_values']
+    top_features = perturbation_data['top_features']
     
     # Create summary plot
     plt.figure(figsize=(12, 8))
     
     # Create bar plot of top features
     plt.subplot(1, 1, 1)
-    plt.barh(top_features['feature'], top_features['shap_value'], color='steelblue')
+    plt.barh(top_features['feature'], top_features['perturbation_value'], color='steelblue')
     plt.xlabel('SHAP Value (Impact on Prediction)', fontsize=14)
     plt.ylabel('Features', fontsize=14)
     plt.title('Top Features by SHAP Value', fontsize=16)
@@ -677,15 +677,15 @@ def visualize_shap_values(shap_data, filename_prefix='results/xai_outputs/shap')
     # Attempt to create a more traditional SHAP summary plot
     try:
         plt.figure(figsize=(12, 8))
-        feature_names = shap_data['feature_names']
+        feature_names = perturbation_data['feature_names']
         
         # Create a sample from flattened SHAP values and feature values
         sample_num = min(20, len(feature_names))  # Limit to top 20 features
-        feature_indices = np.argsort(np.abs(shap_values.flatten()))[-sample_num:]
+        feature_indices = np.argsort(np.abs(perturbation_values.flatten()))[-sample_num:]
         
         plt.barh(
             [feature_names[i] for i in feature_indices],
-            shap_values.flatten()[feature_indices]
+            perturbation_values.flatten()[feature_indices]
         )
         plt.xlabel('SHAP Value', fontsize=14)
         plt.ylabel('Feature', fontsize=14)
@@ -846,7 +846,7 @@ def visualize_attention_weights(attention_info, filename='results/xai_outputs/at
 
 # Generate a comprehensive XAI evaluation report
 def generate_evaluation_report(data_info, channel_importance, temporal_importance, 
-                              shap_data, lime_data, saliency_data, attention_data, num_steps=25):
+                              perturbation_data, lime_data, saliency_data, attention_data, num_steps=25):
     """Generate a comprehensive evaluation report in Markdown format"""
     print("Generating evaluation report...")
     
@@ -898,10 +898,10 @@ The model pays particular attention to the following channels:
         report += f"- **Window {start}-{end}** ({percentage_start:.1f}%-{percentage_end:.1f}% of recording): Attribution score of {importance:.4f}\n"
     
     # Add SHAP insights
-    report += "\n### Feature Importance (SHAP Analysis)\n"
-    top_shap_features = shap_data['top_features'].head(5)
+    report += "\n### Feature Importance (Perturbation Sensitivity Analysis)\n"
+    top_shap_features = perturbation_data['top_features'].head(5)
     for _, row in top_shap_features.iterrows():
-        report += f"- **{row['feature']}**: SHAP value of {row['shap_value']:.4f}\n"
+        report += f"- **{row['feature']}**: SHAP value of {row['perturbation_value']:.4f}\n"
     
     # Add LIME insights
     report += "\n### Local Feature Impact (LIME Analysis)\n"
@@ -1001,14 +1001,28 @@ def main():
     # Save raw attributions
     np.save('xai/ig_attributions.npy', ig_attributions)
     
-    # 2. SHAP Analysis
-    print("\n===== SHAP Analysis =====")
+    # 2. Perturbation Sensitivity Analysis
+    print("\n===== Perturbation Sensitivity Analysis =====")
     # Select one preictal sample for SHAP analysis
-    preictal_idx = np.where(analysis_labels == 1)[0][0]
-    preictal_sample = analysis_samples[preictal_idx:preictal_idx+1]
+    preictal_indices = np.where(analysis_labels == 1)[0]
+    num_samples = min(20, len(preictal_indices))
+    selected_indices = preictal_indices[:num_samples]
     
-    shap_data = compute_shap_values(xai_model, preictal_sample[0], bg_samples)
-    visualize_shap_values(shap_data)
+    print(f"Running XAI on {num_samples} preictal samples...")
+    
+    all_perturbation_values = []
+    for idx in tqdm(selected_indices, desc="Perturbation Analysis"):
+        sample = analysis_samples[idx]
+        p_data = compute_perturbation_importance(xai_model, sample, bg_samples, num_features=20)
+        all_perturbation_values.append(p_data['perturbation_values'])
+        
+    avg_perturbation = np.mean(np.vstack(all_perturbation_values), axis=0).reshape(1, -1)
+    perturbation_data = p_data.copy()
+    perturbation_data['perturbation_values'] = avg_perturbation
+    
+    # Just use the first sample for the rest
+    preictal_sample = analysis_samples[selected_indices[0]:selected_indices[0]+1]
+    visualize_perturbation_importance(perturbation_data)
     
     # 3. LIME Analysis
     print("\n===== LIME Analysis =====")
@@ -1044,7 +1058,7 @@ def main():
         data_info, 
         channel_importance, 
         temporal_importance,
-        shap_data,
+        perturbation_data,
         lime_data,
         saliency_data,
         attention_data,

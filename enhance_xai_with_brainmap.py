@@ -8,7 +8,7 @@ This script enhances XAI results by mapping EEG channels to the International 10
 electrode placement system, providing clinical interpretability by associating 
 channels with specific brain regions and electrode names.
 
-It processes existing XAI files (channel_importance.csv, shap_values.csv, etc.) 
+It processes existing XAI files (channel_importance.csv, perturbation_values.csv, etc.) 
 and creates enhanced versions with brain region mapping in a new directory.
 """
 
@@ -166,18 +166,18 @@ def process_channel_importance(channel_mapping, abbreviated_regions):
         print("Warning: xai/channel_importance.csv not found. Skipping.")
         return None
 
-# Process shap_channel_importance.csv
-def process_shap_channel_importance(channel_mapping, abbreviated_regions):
-    """Process and enhance shap_channel_importance.csv with electrode and brain region info"""
-    print("Processing shap_channel_importance.csv...")
+# Process perturbation_channel_importance.csv
+def process_perturbation_channel_importance(channel_mapping, abbreviated_regions):
+    """Process and enhance perturbation_channel_importance.csv with electrode and brain region info"""
+    print("Processing perturbation_channel_importance.csv...")
     
     try:
         # Read the file
-        df = pd.read_csv('results/xai_outputs/shap_channel_importance.csv')
+        df = pd.read_csv('results/xai_outputs/perturbation_channel_importance.csv')
         
         # Check if we have the expected 21 channels
         if len(df) != 21:
-            print(f"Warning: shap_channel_importance.csv has {len(df)} rows, not 21 as expected.")
+            print(f"Warning: perturbation_channel_importance.csv has {len(df)} rows, not 21 as expected.")
             print("Check if your dataset uses a non-standard EEG montage.")
         
         # Add electrode and brain region information
@@ -197,7 +197,7 @@ def process_shap_channel_importance(channel_mapping, abbreviated_regions):
         df = df.sort_values('importance', ascending=False)
         
         # Save enhanced CSV
-        df.to_csv('results/brain_mapping_outputs/shap_channel_importance_mapped.csv', index=False)
+        df.to_csv('results/brain_mapping_outputs/perturbation_channel_importance_mapped.csv', index=False)
         
         # Create enhanced visualization
         plt.figure(figsize=(14, 8))
@@ -212,8 +212,8 @@ def process_shap_channel_importance(channel_mapping, abbreviated_regions):
         bars = plt.bar(range(len(df)), df['importance'], color='steelblue')
         plt.xticks(range(len(df)), channel_labels, rotation=90, fontsize=10)
         plt.xlabel('EEG Channels with 10-20 System Mapping', fontsize=12)
-        plt.ylabel('SHAP Importance', fontsize=12)
-        plt.title('Channel Importance from SHAP Analysis (10-20 System)', fontsize=14)
+        plt.ylabel('Perturbation Importance', fontsize=12)
+        plt.title('Channel Importance from Perturbation Analysis (10-20 System)', fontsize=14)
         plt.grid(axis='y', linestyle='--', alpha=0.7)
         
         # Add value labels on top of bars
@@ -223,14 +223,14 @@ def process_shap_channel_importance(channel_mapping, abbreviated_regions):
                     f'{height:.2e}', ha='center', va='bottom', rotation=0, fontsize=8)
         
         plt.tight_layout()
-        plt.savefig('results/brain_mapping_outputs/shap_channel_importance_mapped.png', dpi=300)
+        plt.savefig('results/brain_mapping_outputs/perturbation_channel_importance_mapped.png', dpi=300)
         plt.close()
         
-        print("âœ“ Enhanced shap_channel_importance.csv and created visualization")
+        print("âœ“ Enhanced perturbation_channel_importance.csv and created visualization")
         return df
     
     except FileNotFoundError:
-        print("Warning: xai/shap_channel_importance.csv not found. Skipping.")
+        print("Warning: xai/perturbation_channel_importance.csv not found. Skipping.")
         return None
 
 # Process lime_weights.csv
@@ -296,14 +296,14 @@ def process_lime_weights(channel_mapping):
         print("Warning: xai/lime_weights.csv not found. Skipping.")
         return None
 
-# Process shap_values.csv
-def process_shap_values(channel_mapping):
-    """Process and enhance shap_values.csv with electrode and brain region info"""
-    print("Processing shap_values.csv...")
+# Process perturbation_values.csv
+def process_perturbation_values(channel_mapping):
+    """Process and enhance perturbation_values.csv with electrode and brain region info"""
+    print("Processing perturbation_values.csv...")
     
     try:
         # Read the file
-        df = pd.read_csv('results/xai_outputs/shap_values.csv')
+        df = pd.read_csv('results/xai_outputs/perturbation_values.csv')
         
         # Add electrode and brain region information based on channel column
         df['Electrode'] = df['channel'].apply(
@@ -314,7 +314,7 @@ def process_shap_values(channel_mapping):
         )
         
         # Save enhanced CSV
-        df.to_csv('results/brain_mapping_outputs/shap_values_mapped.csv', index=False)
+        df.to_csv('results/brain_mapping_outputs/perturbation_values_mapped.csv', index=False)
         
         # Create enhanced visualization if we have a manageable number of features
         if len(df) <= 30:  # Only create visualization if we have a reasonable number to display
@@ -330,20 +330,20 @@ def process_shap_values(channel_mapping):
             colors = ['green' if imp > 0 else 'red' for imp in df['importance']]
             bars = plt.barh(feature_labels, df['importance'], color=colors)
             
-            plt.xlabel('SHAP Value (Impact on Prediction)', fontsize=12)
+            plt.xlabel('Perturbation Value (Impact on Prediction)', fontsize=12)
             plt.ylabel('Features with Brain Region Mapping', fontsize=12)
-            plt.title('SHAP Feature Importance (10-20 System)', fontsize=14)
+            plt.title('Perturbation Feature Importance (10-20 System)', fontsize=14)
             plt.grid(axis='x', linestyle='--', alpha=0.7)
             
             plt.tight_layout()
-            plt.savefig('results/brain_mapping_outputs/shap_values_mapped.png', dpi=300)
+            plt.savefig('results/brain_mapping_outputs/perturbation_values_mapped.png', dpi=300)
             plt.close()
         
-        print("âœ“ Enhanced shap_values.csv")
+        print("âœ“ Enhanced perturbation_values.csv")
         return df
     
     except FileNotFoundError:
-        print("Warning: xai/shap_values.csv not found. Skipping.")
+        print("Warning: xai/perturbation_values.csv not found. Skipping.")
         return None
 
 # Copy files that don't need modification
@@ -373,7 +373,7 @@ def copy_unmodified_files():
             print(f"Warning: {source_file} not found. Skipping.")
 
 # Create or update evaluation report
-def create_evaluation_report(ig_df, shap_df):
+def create_evaluation_report(ig_df, perturbation_df):
     """Create or update evaluation report with brain mapping insights"""
     print("Creating evaluation report with brain mapping insights...")
     
@@ -430,19 +430,19 @@ Various XAI techniques were applied to understand how the model predicts seizure
             brain_mapping_section += f"- **Channel {ch_idx} ({electrode})**: Attribution score of {importance:.4e}\n"
             brain_mapping_section += f"  - Brain Region: {region}\n"
     
-    # Add insights from shap_channel_importance
-    if shap_df is not None and not shap_df.empty:
-        brain_mapping_section += "\n### Key Channels from SHAP Analysis\n\n"
+    # Add insights from perturbation_channel_importance
+    if perturbation_df is not None and not perturbation_df.empty:
+        brain_mapping_section += "\n### Key Channels from Perturbation Analysis\n\n"
         
         # Get top 5 channels
-        top_channels = shap_df.head(5)
+        top_channels = perturbation_df.head(5)
         for _, row in top_channels.iterrows():
             ch_idx = row['channel']
             electrode = row['Electrode']
             region = row['Brain_Region']
             importance = row['importance']
             
-            brain_mapping_section += f"- **Channel {ch_idx} ({electrode})**: SHAP value of {importance:.4e}\n"
+            brain_mapping_section += f"- **Channel {ch_idx} ({electrode})**: Perturbation value of {importance:.4e}\n"
             brain_mapping_section += f"  - Brain Region: {region}\n"
     
     # Add clinical note
@@ -481,13 +481,13 @@ def main():
     
     # Process each file
     ig_df = process_channel_importance(channel_mapping, abbreviated_regions)
-    shap_df = process_shap_channel_importance(channel_mapping, abbreviated_regions)
+    perturbation_df = process_perturbation_channel_importance(channel_mapping, abbreviated_regions)
     process_lime_weights(channel_mapping)
-    process_shap_values(channel_mapping)
+    process_perturbation_values(channel_mapping)
     copy_unmodified_files()
     
     # Create or update evaluation report
-    create_evaluation_report(ig_df, shap_df)
+    create_evaluation_report(ig_df, perturbation_df)
     
     print("\nâœ… All XAI results have been enhanced with brain mapping in the 'results/brain_mapping_outputs' directory")
 

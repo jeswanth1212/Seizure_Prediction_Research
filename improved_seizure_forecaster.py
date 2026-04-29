@@ -11,7 +11,7 @@ The model uses spiking neurons for more biologically plausible neural simulation
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
@@ -65,7 +65,7 @@ class FocalLoss(nn.Module):
     def forward(self, inputs, targets):
         ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.weight)
         pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1-pt)**self.gamma * ce_loss
+        focal_loss = (1-pt)**self.gamma * ce_loss
         return focal_loss.mean()
 
 # Improved Spiking CNN Encoder with better architecture
@@ -738,12 +738,10 @@ class AttentionEnhancedSNN(nn.Module):
         self.lif_out = snn.Leaky(beta=beta, spike_grad=spike_grad)
         
     def compute_attention(self, x):
-        """Apply simple attention to the input"""
-        # Simple, efficient attention mechanism
+        """Apply simple feature-level attention gating"""
         attn_weights = self.attention(x)
-        attn_weights = F.softmax(attn_weights, dim=1)
-        context = x * attn_weights
-        return context.sum(dim=1)
+        attn_weights = torch.sigmoid(attn_weights)
+        return x * attn_weights
         
     def forward(self, x, freq_features=None, num_steps=50):  # Reduced from 100 to 50
         # Get embeddings from encoder
@@ -1121,36 +1119,36 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
     
     return model, history
 
-def prepare_seizure_data(X_preictal, X_interictal):
-    """Prepare data for training with balancing techniques"""
+def prepare_seizure_data_patient_level(X_preictal, X_interictal, patient_ids_preictal, patient_ids_interictal):
+    """Prepare data for training using patient-level stratification"""
     print(f"Preparing data - preictal: {X_preictal.shape}, interictal: {X_interictal.shape}")
     
-    print("1. Converting preictal data to float32...")
-    # Convert to float32 to save memory
     X_preictal = X_preictal.astype(np.float32)
     
-    print("2. Processing data in batches to avoid memory error...")
-    # Process interictal samples in batches to avoid memory error
-    batch_size = 10000  # Process 10K samples at a time
-    num_batches = (X_interictal.shape[0] + batch_size - 1) // batch_size
-    
-    print("3. Creating labels...")
-    # Create labels
     y_preictal = np.ones(X_preictal.shape[0], dtype=np.int64)
     y_interictal = np.zeros(X_interictal.shape[0], dtype=np.int64)
     
-    print("4. Creating dataset indices...")
-    # Create dataset indices first
     all_indices = np.arange(X_preictal.shape[0] + X_interictal.shape[0])
     all_y = np.concatenate([y_preictal, y_interictal])
+    all_patients = np.concatenate([patient_ids_preictal, patient_ids_interictal])
     
-    print("5. Splitting data into train/val/test sets...")
-    # Split indices first
-    train_idx, temp_idx, y_train, y_temp = train_test_split(
-        all_indices, all_y, test_size=0.3, random_state=SEED, stratify=all_y)
+    print("Splitting data into train/val/test sets at patient level...")
+    gss1 = GroupShuffleSplit(n_splits=1, test_size=0.3, random_state=SEED)
+    train_idx, temp_idx = next(gss1.split(all_indices, all_y, groups=all_patients))
     
-    val_idx, test_idx, y_val, y_test = train_test_split(
-        temp_idx, y_temp, test_size=0.5, random_state=SEED, stratify=y_temp)
+    temp_indices = all_indices[temp_idx]
+    temp_y = all_y[temp_idx]
+    temp_patients = all_patients[temp_idx]
+    
+    gss2 = GroupShuffleSplit(n_splits=1, test_size=0.5, random_state=SEED)
+    val_idx_relative, test_idx_relative = next(gss2.split(temp_indices, temp_y, groups=temp_patients))
+    
+    val_idx = temp_indices[val_idx_relative]
+    test_idx = temp_indices[test_idx_relative]
+    
+    y_train = all_y[train_idx]
+    y_val = all_y[val_idx]
+    y_test = all_y[test_idx]
     
     print(f"Training set: {len(train_idx)} samples")
     print(f"Validation set: {len(val_idx)} samples")
@@ -1200,13 +1198,11 @@ def main():
 
     try:
         print("Loading data files (this may take a while)...")
-        print("Loading data/X_preictal.npy...")
         X_preictal = np.load('data/X_preictal.npy')
-        print(f"Loaded X_preictal: {X_preictal.shape}")
-        
-        print("Loading data/X_interictal.npy...")
         X_interictal = np.load('data/X_interictal.npy')
-        print(f"Loaded X_interictal: {X_interictal.shape}")
+        patient_ids_preictal = np.load('data/patient_ids_preictal.npy')
+        patient_ids_interictal = np.load('data/patient_ids_interictal.npy')
+        print(f"Loaded data shapes: {X_preictal.shape}, {X_interictal.shape}")
     except FileNotFoundError:
         print("Error: Data files not found. Please run seizure_forecasting_pipeline.ipynb first.")
         return
@@ -1215,7 +1211,7 @@ def main():
         return
     
     # Prepare data
-    train_dataset, val_dataset, test_dataset = prepare_seizure_data(X_preictal, X_interictal)
+    train_dataset, val_dataset, test_dataset = prepare_seizure_data_patient_level(X_preictal, X_interictal, patient_ids_preictal, patient_ids_interictal)
     
     # Create dataloaders
     BATCH_SIZE = 32
@@ -1280,8 +1276,18 @@ def main():
     # Create focal loss with class weights
     criterion = FocalLoss(alpha=0.75, gamma=2.0, weight=class_weights)
     
-    # Create optimizer with weight decay for regularization
-    optimizer = optim.AdamW(model.parameters(), lr=5e-5, weight_decay=1e-4)
+    # Freeze the pretrained encoder
+    print("Freezing the pretrained encoder for classifier-head retraining...")
+    for param in combined_model.parameters():
+        param.requires_grad = False
+        
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total Parameters: {total_params}")
+    print(f"Trainable Parameters (Classifier Head): {trainable_params}")
+
+    # Create optimizer for only the classifier head
+    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=5e-5, weight_decay=1e-4)
     
     # Use cosine annealing scheduler for better convergence without restarts
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)

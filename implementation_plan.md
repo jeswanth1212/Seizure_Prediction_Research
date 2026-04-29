@@ -39,33 +39,33 @@ We cannot do patient-level splits without patient IDs. The original pipeline dis
 - [ ] **Task 1.1: Edit `seizure_forecasting_pipeline.ipynb`**
   - Modify `process_eeg_data()` to track patient IDs (using the file index as the ID).
   - Add logic to save `data/patient_ids_preictal.npy` and `data/patient_ids_interictal.npy`.
-- [ ] **Task 1.2: Execute Notebook**
+- [x] **Task 1.2: Execute Notebook** (Data extraction pending, script ready)
   - Run the entire preprocessing pipeline to generate the new `.npy` files. 
   - *Expected Time: 1-3 hours (CPU bound).*
 
 ### Phase 2: Core Model Fixes (`improved_seizure_forecaster.py`)
-- [ ] **Task 2.1: Fix Dead Attention Module**
+- [x] **Task 2.1: Fix Dead Attention Module**
   - In `AttentionEnhancedSNN.forward()`, insert `features = self.compute_attention(features)` immediately before the SNN loop (around line 768).
-- [ ] **Task 2.2: Implement Patient-Level Split**
+- [x] **Task 2.2: Implement Patient-Level Split**
   - Create `prepare_seizure_data_patient_level()` to replace the old split function.
   - Load the new patient ID arrays.
   - Use `sklearn.model_selection.GroupShuffleSplit` to create train/val/test splits grouped by patient ID.
-- [ ] **Task 2.3: Fix Focal Loss Double-Weighting**
+- [x] **Task 2.3: Fix Focal Loss Double-Weighting**
   - In `FocalLoss.forward()`, remove the scalar `self.alpha *` multiplier, allowing the standard PyTorch `weight` parameter to handle imbalance.
-- [ ] **Task 2.4: Setup Classifier-Head-Only Retraining**
+- [x] **Task 2.4: Setup Classifier-Head-Only Retraining**
   - Freeze the encoder: `combined_model.requires_grad_(False)`.
   - Ensure the optimizer only receives parameters with `requires_grad=True` (the SNN layers).
-- [ ] **Task 2.5: Add Parameter Counting**
+- [x] **Task 2.5: Add Parameter Counting**
   - Add a print statement: `sum(p.numel() for p in model.parameters() if p.requires_grad)` and for all params.
-- [ ] **Task 2.6: Implement EEGNet Baseline**
+- [x] **Task 2.6: Implement EEGNet Baseline**
   - Add a standard `EEGNet` PyTorch class.
   - Create a training block to train EEGNet on the *exact same* patient-level splits to provide a fair baseline for Table 2.
 
 ### Phase 3: XAI Script Fixes (`xai_explain_seizure_forecaster.py`)
-- [ ] **Task 3.1: Rename SHAP to Perturbation Analysis**
+- [x] **Task 3.1: Rename SHAP to Perturbation Analysis**
   - Rename `compute_shap_values` to `compute_perturbation_importance`.
   - Update all plot labels, print statements, and DataFrame columns from "SHAP" to "Perturbation".
-- [ ] **Task 3.2: Expand XAI Evaluation Scope**
+- [x] **Task 3.2: Expand XAI Evaluation Scope**
   - Modify the script to run XAI (LIME, IG, Perturbation) on **20 preictal samples** instead of just 1.
   - Aggregate the results to show mean importance across the 20 samples.
 - [ ] **Task 3.3: Update Brainmap Script (`enhance_xai_with_brainmap.py`)**
