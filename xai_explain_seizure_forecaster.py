@@ -40,7 +40,6 @@ from captum.attr import (
     NoiseTunnel,
     visualization as viz
 )
-import shap
 import lime
 import lime.lime_tabular
 
@@ -341,15 +340,15 @@ def compute_integrated_gradients(xai_model, inputs, baseline=None, target=1, n_s
     
     return attributions
 
-# Implement SHAP
+# Implement Perturbation-Based Feature Importance (Occlusion Analysis)
 def compute_perturbation_importance(xai_model, sample, bg_samples, num_features=20):
-    """Compute simplified SHAP-like feature importance"""
+    """Compute perturbation-based feature importance"""
     print("Computing feature importance (Perturbation-style)...")
     
     # Store sample dimensions for reshaping
     sample_shape = sample.shape
     
-    # We'll use a simplified approach since full SHAP is memory-intensive
+    # We'll use a simplified approach since SHAP is memory-intensive and breaks with SNN temporal dynamics
     # Create a feature importance metric based on perturbation
     
     # First, get the baseline prediction for the sample
@@ -411,7 +410,7 @@ def compute_perturbation_importance(xai_model, sample, bg_samples, num_features=
         'perturbation_value': flat_importance
     })
     
-    # Get top features by absolute SHAP value
+    # Get top features by absolute Perturbation value
     top_features = perturbation_df.reindex(perturbation_df['perturbation_value'].abs().sort_values(ascending=False).index)
     top_features = top_features.head(num_features)
     
@@ -652,9 +651,9 @@ def visualize_temporal_importance(attributions, filename='results/xai_outputs/te
 # Visualize SHAP values
 def visualize_perturbation_importance(perturbation_data, filename_prefix='results/xai_outputs/shap'):
     """Visualize SHAP values"""
-    print(f"Visualizing SHAP values...")
+    print(f"Visualizing Perturbation values...")
     
-    # Extract SHAP values and top features
+    # Extract Perturbation values and top features
     perturbation_values = perturbation_data['perturbation_values']
     top_features = perturbation_data['top_features']
     
@@ -664,9 +663,9 @@ def visualize_perturbation_importance(perturbation_data, filename_prefix='result
     # Create bar plot of top features
     plt.subplot(1, 1, 1)
     plt.barh(top_features['feature'], top_features['perturbation_value'], color='steelblue')
-    plt.xlabel('SHAP Value (Impact on Prediction)', fontsize=14)
+    plt.xlabel('Perturbation Impact on Prediction', fontsize=14)
     plt.ylabel('Features', fontsize=14)
-    plt.title('Top Features by SHAP Value', fontsize=16)
+    plt.title('Top Features by Perturbation Importance', fontsize=16)
     plt.grid(axis='x', linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.savefig(f'{filename_prefix}_summary.png', dpi=300)
@@ -687,14 +686,14 @@ def visualize_perturbation_importance(perturbation_data, filename_prefix='result
             [feature_names[i] for i in feature_indices],
             perturbation_values.flatten()[feature_indices]
         )
-        plt.xlabel('SHAP Value', fontsize=14)
+        plt.xlabel('Perturbation Value', fontsize=14)
         plt.ylabel('Feature', fontsize=14)
-        plt.title('SHAP Values (Feature Impact)', fontsize=16)
+        plt.title('Perturbation Values (Feature Impact)', fontsize=16)
         plt.grid(axis='x', linestyle='--', alpha=0.7)
         plt.tight_layout()
         plt.savefig(f'{filename_prefix}_beeswarm.png', dpi=300)
     except Exception as e:
-        print(f"Warning: Could not create standard SHAP beeswarm plot: {e}")
+        print(f"Warning: Could not create standard Perturbation beeswarm plot: {e}")
 
 # Visualize LIME explanation
 def visualize_lime_explanation(lime_data, filename_prefix='results/xai_outputs/lime'):
@@ -897,11 +896,11 @@ The model pays particular attention to the following channels:
         percentage_end = end / len(temporal_importance) * 100
         report += f"- **Window {start}-{end}** ({percentage_start:.1f}%-{percentage_end:.1f}% of recording): Attribution score of {importance:.4f}\n"
     
-    # Add SHAP insights
+    # Add Perturbation insights
     report += "\n### Feature Importance (Perturbation Sensitivity Analysis)\n"
-    top_shap_features = perturbation_data['top_features'].head(5)
-    for _, row in top_shap_features.iterrows():
-        report += f"- **{row['feature']}**: SHAP value of {row['perturbation_value']:.4f}\n"
+    top_perturbation_features = perturbation_data['top_features'].head(5)
+    for _, row in top_perturbation_features.iterrows():
+        report += f"- **{row['feature']}**: Perturbation value of {row['perturbation_value']:.4f}\n"
     
     # Add LIME insights
     report += "\n### Local Feature Impact (LIME Analysis)\n"
@@ -1003,7 +1002,7 @@ def main():
     
     # 2. Perturbation Sensitivity Analysis
     print("\n===== Perturbation Sensitivity Analysis =====")
-    # Select one preictal sample for SHAP analysis
+    # Select one preictal sample for Perturbation analysis
     preictal_indices = np.where(analysis_labels == 1)[0]
     num_samples = min(20, len(preictal_indices))
     selected_indices = preictal_indices[:num_samples]

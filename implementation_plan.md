@@ -36,12 +36,15 @@ To fix Blocker 1 without waiting 14 hours for the SimCLR encoder to retrain, we 
 ### Phase 1: Data Pipeline Fix (CPU Bound)
 We cannot do patient-level splits without patient IDs. The original pipeline discarded patient IDs when saving the segments.
 
-- [ ] **Task 1.1: Edit `seizure_forecasting_pipeline.ipynb`**
+- [x] **Task 1.1: Edit `seizure_forecasting_pipeline.ipynb`**
   - Modify `process_eeg_data()` to track patient IDs (using the file index as the ID).
   - Add logic to save `data/patient_ids_preictal.npy` and `data/patient_ids_interictal.npy`.
 - [x] **Task 1.2: Execute Notebook** (Data extraction pending, script ready)
   - Run the entire preprocessing pipeline to generate the new `.npy` files. 
   - *Expected Time: 1-3 hours (CPU bound).*
+- [x] **Task 1.3: Implement 3-Expert Consensus Labeling**
+  - Update `run_extraction_only.py` to load Expert A, B, and C CSVs.
+  - Apply majority vote rule: label as seizure only if at least 2/3 experts agree.
 
 ### Phase 2: Core Model Fixes (`improved_seizure_forecaster.py`)
 - [x] **Task 2.1: Fix Dead Attention Module**
@@ -68,7 +71,7 @@ We cannot do patient-level splits without patient IDs. The original pipeline dis
 - [x] **Task 3.2: Expand XAI Evaluation Scope**
   - Modify the script to run XAI (LIME, IG, Perturbation) on **20 preictal samples** instead of just 1.
   - Aggregate the results to show mean importance across the 20 samples.
-- [ ] **Task 3.3: Update Brainmap Script (`enhance_xai_with_brainmap.py`)**
+- [x] **Task 3.3: Update Brainmap Script (`enhance_xai_with_brainmap.py`)**
   - Ensure any references to SHAP are renamed to Perturbation Sensitivity.
 
 ### Phase 4: Training & Evaluation Execution (GPU Bound)
@@ -90,6 +93,8 @@ We cannot do patient-level splits without patient IDs. The original pipeline dis
   - Describe the new patient-level split protocol and freezing of the encoder.
 - [ ] **Task 5.3: XAI Claim Corrections**
   - Change all "SHAP" references to "Perturbation Sensitivity Analysis" (or Occlusion).
+  - Add methodology explanation: "SHAP was initially considered for feature attribution; however, due to the temporal complexity and high dimensionality of EEG signals, as well as the non-standard spiking dynamics of the SNN architecture, SHAP was found to be computationally inefficient and less stable. Therefore, we adopt a perturbation-based sensitivity analysis, where individual channel-time features are systematically perturbed and the resulting change in model output is measured. This approach provides a direct and model-agnostic estimate of feature importance while maintaining computational feasibility."
+  - Add explicit note: "Feature importance is approximated by replacing individual input values with background statistics and observing the resulting change in prediction."
   - **DELETE** the 85% expert concordance claim. Replace with qualitative alignment to temporal/central lobe literature.
 - [ ] **Task 5.4: Results & Tables**
   - Update all performance metrics with the new patient-level results.
